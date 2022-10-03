@@ -1,0 +1,25 @@
+first scenario :
+if there are pdf and images in the mail then we have to just forward the mail
+
+second scenario :
+if there is secure doc in the mail then we have to download all the attachments present in the mail and mention sender details
+along with empty body 
+
+third scenario:
+
+scenario for Claims Additional Info for unencrypted email::
+1:Read the email from Claims Additional info and download the attachment from the mail.
+2.Fetch the sender name and email address from the body of the recieved mail for the body to send the email.
+3. And also Fetch "To_address" from the body of the recieved mail along with "Sender_name" and "Email_address".
+4.Next send the email to the "To_Address" with the body with below template and subject same as the recieved mail.
+   " Please find the attachment from the below sender.
+   Sender Name: from Sender Name
+   Mail: From sender email address
+   Body from sender: Fetched body from recieved mail.
+          if there is no body send it as "Empty Body"
+ 
+   Thanks,
+   Decrypt Bot"
+5.once after sending the email,Next move the recieved email to the processed email folder.
+
+
