@@ -222,50 +222,23 @@ def main(config_dic):
                     #logger.error("unable to find the downloaded attachments")
                     #raise Exception("Unable to find the downloaded attachments")
             else:
-                finished_files = []
-                for each_address_index in range(no_of_to_address_in_body):
-                    each_to_address = to_address_in_the_body[each_address_index]
-                    if each_to_address.lower() in finished_files:
-                        continue
-                    finished_files.append(each_to_address.lower())
-                    logger.info(
-                        "Getting password from excel for combination " + from_address_domain_in_the_body + " - " + each_to_address)
-                    password_in_excel = get_excel_password(file_name=password_excel_file_path,
-                                                           from_domain=from_address_domain_in_the_body,
-                                                           to_address=each_to_address)
-                    print(each_address_index < (no_of_to_address_in_body))
-                    if password_in_excel is not None and each_address_index < no_of_to_address_in_body:
-                        # if len(os.listdir(download_directory)) > 0:
-                        #     for f in os.listdir(download_directory):
-                        #         os.remove(os.path.join(download_directory, f))
-                        try:
-                            for file in os.listdir(root_file_dir):
-                                if file.lower().endswith('.html') or file.lower().endswith('.htm'):
-                                    body_Text = marinerfinance_automation.marine_automation(
-                                        local_file_path=os.path.join(root_file_dir, file),
-                                        download_directory=root_file_dir,
-                                        no_of_to_address=no_of_to_address_in_body,
-                                        to_address=each_to_address,
-                                        password=password_in_excel)
-                                    #body_text='asdf'
-                                    print(password)
-                                    #print(body)
-                        except Exception as msg:
-                            if str(msg).lower() == "invalid username or password" and each_address_index < (
-                                    no_of_to_address_in_body - 1):
-                                logger.warn(
-                                    "skipping current email address - " + each_to_address + " because of invalid username or password")
-                            else:
-                                print(msg)
-                                logger.error(msg)
-                                logger.error("Unable to download the encrypted email attachment file")
-                    elif each_address_index >= no_of_to_address_in_body:
-                        raise Exception(
-                            "Unable to get password from the excel for the combination " + each_to_address + " and " + from_address_domain_in_the_body)
+                try:
+                    for file in os.listdir(root_file_dir):
+                        if file.lower().endswith('.html') or file.lower().endswith('.htm'):
+                            body_Text = marinerfinance_automation.marine_automation(
+                                local_file_path=os.path.join(root_file_dir, file),
+                                download_directory=root_file_dir,
+                                no_of_to_address=no_of_to_address_in_body,
+                                password_excel_file_path=password_excel_file_path,
+                                from_address_domain_in_the_body=from_address_domain_in_the_body)
+                            #print(body)
+                except Exception as msg:
+                    if str(msg).lower() == "invalid username or password":
+                        logger.warn("skipping current email because of invalid username or password")
                     else:
-                        print(
-                            " Skipping the email and moving to next email because unable to get password from the excel for the combination " + each_to_address + " and " + from_address_domain_in_the_body)
-                    # break
+                        print(msg)
+                        logger.error(msg)
+                        logger.error("Unable to download the encrypted email attachment file")
                 downloaded_files_list = [os.path.abspath(file) for file in os.listdir(root_file_dir) if
                                          os.path.isfile(os.path.abspath(file))]
                 downloaded_files_list = [file for file in downloaded_files_list if not (file.lower().endswith('.html') or file.lower().endswith('.htm'))]

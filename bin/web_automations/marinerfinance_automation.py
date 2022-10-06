@@ -8,7 +8,33 @@ import time
 import wait_until_attachment_downloaded
 from selenium.common.exceptions import NoSuchElementException,TimeoutException
 
-def marine_automation(local_file_path, download_directory, no_of_to_address, to_address, password):
+from bin.getPasswordFromExcel import get_excel_password
+
+
+def login(driver, password):
+    # Wait and Get To_email(UserName)
+    WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, "//*[@id=\"emailTo\"]")))
+    print(driver.find_element(By.XPATH, "//*[@id=\"emailTo\"]").text)
+    # Wait and Type Password
+    WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, "//*[@id=\"passwordInput1\"]")))
+    password_element = driver.find_element(By.XPATH, "//*[@id=\"passwordInput1\"]")
+    password_element.send_keys(password)
+    # Wait and Click Open Online Button
+    WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, "//*[@id='openButtonLocation']")))
+    submit_button = driver.find_element(By.XPATH, "//*[@id='openButtonLocation']")
+    submit_button.click()
+    try:
+        # Check if the password correct or not
+        WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, "//*[@id='passMsg']/span")))
+        incorrect_element = driver.find_element(By.XPATH, "//*[@id='passMsg']/span")
+        if incorrect_element.text.lower() == "Incorrect email address or password. Please try again.".lower():
+            raise Exception("Invalid UserName or Password")
+    except (NoSuchElementException, TimeoutException):
+        print("successfully logged in")
+
+
+def marine_automation(local_file_path, download_directory, no_of_to_address, password_excel_file_path,
+                      from_address_domain_in_the_body):
     """This Function will do the web automation """
 
     # Getting Chrome Instance
@@ -40,41 +66,44 @@ def marine_automation(local_file_path, download_directory, no_of_to_address, to_
         WebDriverWait(driver, 120).until(EC.presence_of_element_located((By.XPATH, "//*[@id='toSelect']")))
         username_dropdown = driver.find_element(By.XPATH, "//*[@id='toSelect']")
         option_list_elements = username_dropdown.find_elements(By.XPATH, ".//*")
+        found = True
         for each_option in option_list_elements:
-            if each_option.text.lower() == to_address:
-                each_option.click()
-                time.sleep(5)
+            to_address = each_option.text
+            if to_address == '' or to_address == 'Address not listed':
+                continue
+            each_option.click()
+            time.sleep(5)
+            # Click on Submit button
+            submit_element = driver.find_element(By.XPATH, "//*[@id='text_buttonSubmit']")
+            submit_element.click()
+            password = get_excel_password(file_name=password_excel_file_path,
+                                          from_domain=from_address_domain_in_the_body,
+                                          to_address=to_address)
+            try:
+                WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.ID, "authFrame")))
+                driver.switch_to.frame("authFrame")
+                login(driver, password)
+                found = False
                 break
-
-        # Click on Submit button
-        submit_element = driver.find_element(By.XPATH, "//*[@id='text_buttonSubmit']")
-        submit_element.click()
-    else:
-        to_email = driver.find_element(By.XPATH, "//*[@id='emailTo']")
-
-    # Switching to iframe to access inner elements
-    WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.ID, "authFrame")))
-    driver.switch_to.frame("authFrame")
-
-    # Wait and Get To_email(UserName)
-    WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, "//*[@id=\"emailTo\"]")))
-    print(driver.find_element(By.XPATH, "//*[@id=\"emailTo\"]").text)
-    # Wait and Type Password
-    WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, "//*[@id=\"passwordInput1\"]")))
-    password_element = driver.find_element(By.XPATH, "//*[@id=\"passwordInput1\"]")
-    password_element.send_keys(password)
-    # Wait and Click Open Online Button
-    WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, "//*[@id='openButtonLocation']")))
-    submit_button = driver.find_element(By.XPATH, "//*[@id='openButtonLocation']")
-    submit_button.click()
-    try:
-        # Check if the password correct or not
-        WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, "//*[@id='passMsg']/span")))
-        incorrect_element = driver.find_element(By.XPATH, "//*[@id='passMsg']/span")
-        if incorrect_element.text.lower() == "Incorrect email address or password. Please try again.".lower():
+            except:
+                back = driver.find_element(By.XPATH, "//*[@id='wrongAddressLink']")
+                back.click()
+                time.sleep(5)
+                driver.switch_to.default_content()
+        if found:
             raise Exception("Invalid UserName or Password")
-    except (NoSuchElementException,TimeoutException):
-        print("successfully logged in")
+    else:
+        # Switching to iframe to access inner elements
+        WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.ID, "authFrame")))
+        driver.switch_to.frame("authFrame")
+        to_address = driver.find_element(By.XPATH, "//*[@id='emailTo']").text
+        password = get_excel_password(file_name=password_excel_file_path,
+                                      from_domain=from_address_domain_in_the_body,
+                                      to_address=to_address)
+        try:
+            login(driver, password)
+        except:
+            raise Exception("Invalid UserName or Password")
 
     # Switching Out from Iframe to Default
     driver.switch_to.default_content()
@@ -151,4 +180,3 @@ def marine_automation(local_file_path, download_directory, no_of_to_address, to_
 # each_to_address = 'claims@life-south.com'
 # password_in_excel = "CiscoClm205"
 # marine_automation(local_file_path=attachment_path, download_directory=download_directory, no_of_to_address=no_of_to_address_in_body, to_address=each_to_address, password=password_in_excel)
-
