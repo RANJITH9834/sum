@@ -179,7 +179,7 @@ def get_attachments(token, mail_folder, message_id, file_directory, logger):
         normal_files_present = False
         for y in response_dict['value']:
             # print(y['contentType'])
-            if (y['contentType'] in attachment_type or str(y['contentType']).lower().startswith('image/')) and y['isInline'] == False:
+            if (y['contentType'] in attachment_type or str(y['contentType']).lower().startswith('image/') or y['name'].lower().endswith('.eml')) and y['isInline'] == False:
                 if not (y['name'].lower().endswith('.html') or y['name'].lower().endswith('htm')):
                     normal_files_present = True
                 counter = counter + 1
