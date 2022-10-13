@@ -134,6 +134,8 @@ def message_ids(token, mail_folder, mails_per_each_run, logger):
                 message_type = x.get('body').get('contentType')
                 if message_type == "html":
                     message_body = x.get('body').get('content')
+                elif message_type == 'text' and x.get('hasAttachments'):
+                    message_body = ''
                 else:
                     logger.error("Unable to get the body of the email")
                     raise Exception(f"Unable to get the body of the email:{message_id}")
@@ -179,7 +181,8 @@ def get_attachments(token, mail_folder, message_id, file_directory, logger):
         normal_files_present = False
         for y in response_dict['value']:
             # print(y['contentType'])
-            if (y['contentType'] in attachment_type or str(y['contentType']).lower().startswith('image/') or y['name'].lower().endswith('.eml')) and y['isInline'] == False:
+            if ((y['contentType'] in attachment_type or str(y['contentType']).lower().startswith('image/')) or
+                (y['contentType'] is None and y['name'] == '' and y['size'] > 1)) and y['isInline'] == False:
                 if not (y['name'].lower().endswith('.html') or y['name'].lower().endswith('htm')):
                     normal_files_present = True
                 counter = counter + 1
